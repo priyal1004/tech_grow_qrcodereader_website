@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Reader with Camera Mode</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(145deg, #A1C4FD, #C2E9FB); /* Soft blue gradient */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        #scanner-container {
+            display: none;
+            max-width: 450px;
+            width: 100%;
+            margin: 20px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        #result {
+            font-size: 1.2rem;
+            color: #007BFF;
+            word-wrap: break-word;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        #result:hover {
+            text-decoration: underline;
+        }
+        #camera-toggle {
+            padding: 15px 30px;
+            background-color: #007BFF;
+            color: #fff;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+        #camera-toggle:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+        }
+        #camera-toggle:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        #error-message {
+            color: #ff0000;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .scanner-box {
+            border: 2px solid #007BFF;
+            border-radius: 10px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .scanner-box .html5qr-code-camera-button {
+            background-color: #007BFF;
+            border-radius: 50%;
+            border: none;
+            padding: 12px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>QR Code Scanner</h1>
+        <button id="camera-toggle">Switch to Camera Mode</button>
+        <div id="scanner-container" class="scanner-box"></div>
+        <div id="output">
+            <p>Scanned Result: <span id="result">None</span></p>
+            <p id="error-message"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script>
+        const scannerContainer = document.getElementById("scanner-container");
+        const resultDisplay = document.getElementById("result");
+        const errorMessage = document.getElementById("error-message");
+        const cameraToggle = document.getElementById("camera-toggle");
+        let isCameraMode = false;
+        let html5QrCodeScanner;
+
+        cameraToggle.addEventListener("click", () => {
+            isCameraMode = !isCameraMode;
+
+            if (isCameraMode) {
+                cameraToggle.textContent = "Switch to Upload Mode";
+                startCameraMode();
+            } else {
+                cameraToggle.textContent = "Switch to Camera Mode";
+                stopCameraMode();
+            }
+        });
+
+        function startCameraMode() {
+            scannerContainer.style.display = "block";
+            errorMessage.textContent = "";
+
+            html5QrCodeScanner = new Html5QrcodeScanner(
+                "scanner-container",
+                {
+                    fps: 10,
+                    qrbox: 250, // Optional size of the scanning box
+                },
+                false // Do not verbose log
+            );
+
+            html5QrCodeScanner.render(
+                (decodedText, decodedResult) => {
+                    console.log("Scanned result:", decodedText);
+                    resultDisplay.textContent = decodedText;
+
+                    // Make the scanned result clickable if it's a URL
+                    if (isValidUrl(decodedText)) {
+                        const link = document.createElement('a');
+                        link.href = decodedText;
+                        link.target = '_blank';
+                        link.textContent = decodedText;
+                        resultDisplay.innerHTML = ''; // Clear previous content
+                        resultDisplay.appendChild(link); // Append the link element
+                    }
+                },
+                (error) => {
+                    console.warn("QR Code scanning error:", error);
+                    errorMessage.textContent = "Unable to scan QR code. Please try again.";
+                }
+            );
+        }
+
+        function stopCameraMode() {
+            if (html5QrCodeScanner) {
+                html5QrCodeScanner.clear();
+            }
+            scannerContainer.style.display = "none";
+        }
+
+        // Function to check if a text is a valid URL
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>
